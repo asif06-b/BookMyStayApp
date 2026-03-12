@@ -1,77 +1,114 @@
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
-// Reservation class representing a booking request
-class Reservation {
+/*
+ * Use Case 7: Add-On Service Selection
+ * Demonstrates attaching optional services to reservations
+ */
 
-    private String guestName;
-    private String roomType;
+class Service {
+    private String serviceName;
+    private double cost;
 
-    public Reservation(String guestName, String roomType) {
-        this.guestName = guestName;
-        this.roomType = roomType;
+    public Service(String serviceName, double cost) {
+        this.serviceName = serviceName;
+        this.cost = cost;
     }
 
-    public String getGuestName() {
-        return guestName;
+    public String getServiceName() {
+        return serviceName;
     }
 
-    public String getRoomType() {
-        return roomType;
+    public double getCost() {
+        return cost;
     }
 
-    public void displayReservation() {
-        System.out.println("Guest: " + guestName + " | Requested Room: " + roomType);
+    public String toString() {
+        return serviceName + " ($" + cost + ")";
     }
 }
 
-// Booking Request Queue
-class BookingRequestQueue {
+class AddOnServiceManager {
 
-    private Queue<Reservation> requestQueue;
+    // reservationId -> list of services
+    private Map<String, List<Service>> reservationServices = new HashMap<>();
 
-    public BookingRequestQueue() {
-        requestQueue = new LinkedList<>();
+    // Add service to reservation
+    public void addService(String reservationId, Service service) {
+
+        reservationServices
+                .computeIfAbsent(reservationId, k -> new ArrayList<>())
+                .add(service);
+
+        System.out.println("Service added to reservation " + reservationId +
+                ": " + service.getServiceName());
     }
 
-    // Add booking request to queue
-    public void addRequest(Reservation reservation) {
-        requestQueue.add(reservation);
-        System.out.println("Booking request added for " + reservation.getGuestName());
+    // Get services for reservation
+    public List<Service> getServices(String reservationId) {
+        return reservationServices.getOrDefault(reservationId, new ArrayList<>());
     }
 
-    // Display all requests in queue
-    public void displayRequests() {
-        System.out.println("\n=== Current Booking Requests (FIFO Order) ===");
+    // Calculate total add-on cost
+    public double calculateTotalCost(String reservationId) {
 
-        for (Reservation r : requestQueue) {
-            r.displayReservation();
+        List<Service> services = reservationServices.get(reservationId);
+
+        if (services == null) return 0;
+
+        double total = 0;
+
+        for (Service s : services) {
+            total += s.getCost();
         }
+
+        return total;
+    }
+
+    // Display services for reservation
+    public void displayServices(String reservationId) {
+
+        List<Service> services = getServices(reservationId);
+
+        System.out.println("\nServices for Reservation: " + reservationId);
+
+        if (services.isEmpty()) {
+            System.out.println("No add-on services selected.");
+            return;
+        }
+
+        for (Service s : services) {
+            System.out.println("- " + s);
+        }
+
+        System.out.println("Total Add-On Cost: $" + calculateTotalCost(reservationId));
     }
 }
 
-// Main Application
 public class BookMyStayApp {
 
     public static void main(String[] args) {
 
-        System.out.println("=== Book My Stay App - Booking Request System ===");
+        AddOnServiceManager manager = new AddOnServiceManager();
 
-        BookingRequestQueue bookingQueue = new BookingRequestQueue();
+        // Example reservation IDs (created in previous use case)
+        String reservation1 = "RES-101";
+        String reservation2 = "RES-102";
 
-        // Guests submit booking requests
-        Reservation r1 = new Reservation("Alice", "Single Room");
-        Reservation r2 = new Reservation("Bob", "Double Room");
-        Reservation r3 = new Reservation("Charlie", "Suite Room");
+        // Create services
+        Service breakfast = new Service("Breakfast", 20);
+        Service airportPickup = new Service("Airport Pickup", 50);
+        Service spa = new Service("Spa Access", 40);
+        Service extraBed = new Service("Extra Bed", 30);
 
-        bookingQueue.addRequest(r1);
-        bookingQueue.addRequest(r2);
-        bookingQueue.addRequest(r3);
+        // Guest selects services
+        manager.addService(reservation1, breakfast);
+        manager.addService(reservation1, spa);
 
-        // Display queue (arrival order)
-        bookingQueue.displayRequests();
+        manager.addService(reservation2, airportPickup);
+        manager.addService(reservation2, extraBed);
 
-        System.out.println("\nRequests will be processed in the same order they arrived.");
-        System.out.println("=== End of Application ===");
+        // Display selected services
+        manager.displayServices(reservation1);
+        manager.displayServices(reservation2);
     }
 }
